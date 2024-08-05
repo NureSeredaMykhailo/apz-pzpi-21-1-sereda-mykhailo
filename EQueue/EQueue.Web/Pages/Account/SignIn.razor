@@ -1,0 +1,51 @@
+﻿@page "/account/signin"
+@using EQueue.Shared.Dto
+@using EQueue.Web.Security
+@layout AccountLayout
+
+@inject NavigationManager _navigationManager
+@inject AuthenticationService _authService
+
+<h2 class="text-center flex-grow-1">Sign in</h2>
+<EditForm class="d-flex flex-column mb-2" Model="_credential" OnValidSubmit="Login">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mt-2">
+        <div>Login</div>
+        <InputText class="form-control" @bind-Value=_credential.Login placeholder="Enter login" />
+    </div>
+    <div class="mt-2">
+        <div>Password</div>
+        <InputText type="password" class="form-control" @bind-Value=_credential.Password placeholder="Enter password" />
+    </div>
+
+    <button class="m-0 mt-3 btn btn-primary" type="submit">Accept</button>
+</EditForm>
+@_loginMessage
+
+@code {
+    private Credentials _credential = new Credentials();
+
+    private string _loginMessage = string.Empty;
+
+    private async Task Login()
+    {
+        _loginMessage = "...loading";
+
+        var loginResult = await _authService.LoginAsync(_credential);
+
+        if (loginResult.IsSuccess)
+        {
+            AfterLoginSuccess();
+        }
+        else
+        {
+            _loginMessage = loginResult.ErrorMessage;
+        }
+    }
+
+    private void AfterLoginSuccess()
+    {
+        _navigationManager.NavigateTo("/");
+    }
+}

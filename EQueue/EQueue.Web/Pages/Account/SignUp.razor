@@ -1,0 +1,38 @@
+﻿@page "/account/signup"
+@using EQueue.Shared.Dto
+@using EQueue.Web.Security
+@layout AccountLayout
+
+@inject AuthenticationService _authService
+
+<h2 class="text-center flex-grow-1">Sign up</h2>
+
+<EditForm class="d-flex flex-column mb-2" Model="_model" OnValidSubmit="Register">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mt-2">
+        <div>Login</div>
+        <InputText type="login" class="form-control" @bind-Value=_model.Login placeholder="Enter login" />
+    </div>
+    <div class="mt-2">
+        <div>Password</div>
+        <InputText type="password" class="form-control" @bind-Value=_model.Password placeholder="Enter password" />
+    </div>
+    <button class="m-0 mt-3 btn btn-primary" type="submit">Accept</button>
+</EditForm>
+@_postResult
+
+@code {
+    private Credentials _model = new();
+
+    private string _postResult = string.Empty;
+
+    private async Task Register()
+    {
+        _postResult = "...loading";
+        var response = await _authService.SignUpAsync(_model);
+        _postResult = response.IsSuccess
+            ? "Successfully registered"
+            : response.ErrorMessage;
+    }
+}
