@@ -20,14 +20,17 @@ namespace EQueue.Server.Controllers
         private readonly RoleManager<IdentityRole<long>> _roleManager;
         private readonly ApplicationDbContext _dbContext;
         private readonly ITokenGenerator _tokenGenerator;
+        private readonly IValidationService _validationService;
 
         public AccountController(UserManager<User> userManager, RoleManager<IdentityRole<long>> roleManager, 
-            ApplicationDbContext dbContext, ITokenGenerator tokenGenerator)
+            ApplicationDbContext dbContext, ITokenGenerator tokenGenerator, IValidationService validationService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _dbContext = dbContext;
             _tokenGenerator = tokenGenerator;
+            _validationService = validationService;
+
         }
 
         [HttpPost("create")]
@@ -35,6 +38,11 @@ namespace EQueue.Server.Controllers
         {
             try
             {
+                var validationResponse = await _validationService.ValidateAsync(credentials);
+                if (!validationResponse.IsSuccess)
+                {
+                    return BadRequest(validationResponse.ErrorMessage);
+                }
                 var identityUser = new User()
                 {
                     UserName = credentials.Login
@@ -75,6 +83,11 @@ namespace EQueue.Server.Controllers
         {
             try
             {
+                var validationResponse = await _validationService.ValidateAsync(credentials);
+                if (!validationResponse.IsSuccess)
+                {
+                    return BadRequest(validationResponse.ErrorMessage);
+                }
                 var identityUser = await _userManager.FindByNameAsync(credentials.Login);
                 if (identityUser is null)
                 {

@@ -8,6 +8,7 @@ namespace EQueue.Server.BuildExtensions
         internal static void AddServices(this IServiceCollection services)
         {
             services.AddTransient<ITokenGenerator, JwtTokenGenerator>();
+            services.AddTransient<IValidationService, ValidationService>();
         }
     }
 }

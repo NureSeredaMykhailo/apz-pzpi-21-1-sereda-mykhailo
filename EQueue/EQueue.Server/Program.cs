@@ -13,6 +13,7 @@ builder.Services.AddSetSecurity(builder.Configuration);
 builder.Services.AddSetCors();
 builder.Services.AddDbSetup(builder.Configuration);
 builder.Services.AddAutoMapper(Assembly.GetExecutingAssembly());
+builder.Services.AddValidators();
 
 var app = builder.Build();
 
