@@ -1,0 +1,31 @@
+﻿<div class="dropdown">
+    @if (Head is not null)
+    {
+        <div @onclick="ToggleVisibility" class="drop-head">
+            @Head        
+        </div>
+    }
+    @if (Content is not null)
+    {
+        <div class="@Visibility dropdown-content" style="background-color: white">
+            @Content
+        </div>
+    }
+</div>
+
+@code {
+    protected string Visibility = "";
+
+    [Parameter]
+    public RenderFragment? Head { get; set; }
+
+    [Parameter]
+    public RenderFragment? Content { get; set; }
+
+    protected void ToggleVisibility()
+    {
+        Visibility = Visibility == ""
+            ? "drop-showed"
+            : "";
+    }
+}

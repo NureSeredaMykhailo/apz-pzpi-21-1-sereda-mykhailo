@@ -1,0 +1,71 @@
+﻿@using System.Reflection
+@using System.Linq.Expressions
+
+@typeparam TItem
+
+<div class="list">
+    @if(ShowSearch)
+    {
+        <div class="d-inline-flex">
+            <input @bind="_nameFilter" @bind:event="oninput"
+               placeholder="search" class="form-control" />
+        </div>
+    }
+    @if (Collection is not null)
+    {
+        @foreach (var item in _filtered)
+        {
+            <Item @onclick="() => PickAsync(item)">@GetName(item)</Item>
+        }
+    }
+</div>
+
+@code {
+    private string _nameFilter = string.Empty;
+
+    private List<TItem> _filtered 
+    {
+        get
+        {
+            return Collection.Where(i => GetName(i)
+                .Contains(_nameFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+    }
+
+    [Parameter]
+    public List<TItem> Collection { get; set; }
+
+    [Parameter]
+    public Expression<Func<TItem, string>> NamePropExpression { get; set; }
+
+    [Parameter]
+    public Action<TItem>? PickAction { get; set; }
+
+    [Parameter]
+    public Func<TItem, Task>? PickActionAsync { get; set; }
+
+    [Parameter]
+    public bool ShowSearch { get; set; } = false;
+
+    private async Task PickAsync(TItem item)
+    {
+        PickAction?.Invoke(item);
+        if(PickActionAsync is not null)
+        {
+            await PickActionAsync(item);
+        }
+        _nameFilter = string.Empty;
+    }
+
+    private string GetName(TItem item)
+    {
+        var property = typeof(TItem).GetProperty(PropName());
+        return (string)property!.GetValue(item)!;
+    }
+
+    private string PropName()
+    {
+        MemberExpression body = (MemberExpression)NamePropExpression.Body;
+        return body.Member.Name;
+    }
+}

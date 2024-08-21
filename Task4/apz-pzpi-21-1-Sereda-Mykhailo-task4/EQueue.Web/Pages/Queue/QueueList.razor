@@ -1,0 +1,73 @@
+﻿@page "/casequeue"
+
+@using EQueue.Shared.Dto
+@using EQueue.Web.Services.Interfaces
+@inject IHttpService httpService
+@inject NavigationManager NavigationManager
+
+<h3>Case Queue</h3>
+
+<div>
+    <label for="date">Date:</label>
+    <input type="datetime-local" id="date" @bind="date" class="form-control" />
+
+    <button class="btn btn-primary mt-4" @onclick="FilterCases">Filter</button>
+</div>
+
+<button class="btn btn-primary mt-4" @onclick="RedirectToAddNewCase">Add New Case</button>
+
+<table class="table table-bordered mt-4">
+    <thead>
+        <tr>
+            <th>Case Name</th>
+            <th>Damage Priority</th>
+            <th>Death Priority</th>
+            <th>Combined Priority</th>
+            <th>Start Priority Period</th>
+            <th>End Priority Period</th>
+            <th>Traumas Registered Date</th>
+            <th>Traumas</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var caseQueue in caseQueues)
+        {
+            <tr>
+                <td>@caseQueue.Name</td>
+                <td>@caseQueue.DamagePriority</td>
+                <td>@caseQueue.DeathPriority</td>
+                <td>@caseQueue.CombinedPriority</td>
+                <td>@DateTimeOffset.FromUnixTimeSeconds(caseQueue.PriorityPeriodStartUnix).DateTime.ToString("g")</td>
+                <td>@DateTimeOffset.FromUnixTimeSeconds(caseQueue.PriorityPeriodEndUnix).DateTime.ToString("g")</td>
+                <td>@DateTimeOffset.FromUnixTimeSeconds(caseQueue.TraumasRegisteredUnixTime).DateTime.ToString("g")</td> <!-- New column data -->
+                <td>
+                    @foreach (var trauma in caseQueue.TraumaDtos)
+                    {
+                        <div>@trauma.TraumaPlaceTitle - @trauma.TraumaTypeTitle</div>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<CaseQueueDto> caseQueues = new();
+    private DateTime date = DateTime.Now;
+
+    private async Task FilterCases()
+    {
+        var dateUnix = ((DateTimeOffset)date).ToUnixTimeSeconds();
+
+        var response = await httpService.SendAsync<List<CaseQueueDto>>(HttpMethod.Get, $"CaseQueue/filter?dateUnix={dateUnix}");
+        if (response.IsSuccess)
+        {
+            caseQueues = response.Result;
+        }
+    }
+
+    private void RedirectToAddNewCase()
+    {
+        NavigationManager.NavigateTo("/casequeue/new");
+    }
+}

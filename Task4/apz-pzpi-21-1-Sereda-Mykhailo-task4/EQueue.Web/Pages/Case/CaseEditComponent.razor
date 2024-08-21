@@ -1,0 +1,114 @@
+﻿@page "/cases/edit/{Id:long}"
+
+@using EQueue.Shared.Dto
+@using EQueue.Web.Services.Interfaces
+@inject IHttpService httpService
+@inject NavigationManager NavigationManager
+
+<h3>Edit Case</h3>
+
+<div>
+    <label>Age:</label>
+    <input type="number" @bind="caseDto.Age" class="form-control" />
+</div>
+
+<div>
+    <label>Name:</label>
+    <input type="text" @bind="caseDto.Name" class="form-control" />
+</div>
+
+<div>
+    <label>Clinic:</label>
+    <ClickDrop>
+        <Head>
+            <div class="btn btn-primary mt-2">Select Clinic</div>
+        </Head>
+        <Content>
+            <PickList Collection="clinics"
+                      NamePropExpression="c => c.Title"
+                      PickAction="SelectClinic"
+                      ShowSearch="true" />
+        </Content>
+    </ClickDrop>
+    @if (caseDto.ClinicId.HasValue)
+    {
+        <div class="my-2">Selected Clinic: @caseDto.ClinicTitle</div>
+    }
+</div>
+
+<div class="mb-3">
+    <label for="traumasRegisteredUnixTime" class="form-label">Traumas registered Time</label>
+    <input type="datetime-local" class="form-control" @bind="traumasRegisteredUnixTime" />
+</div>
+
+<div>
+    <label>Started Treatment:</label>
+    <input type="datetime-local" @bind="startedTreatmentDateTime" class="form-control" />
+</div>
+
+
+<div>
+    <label>Survived:</label>
+    <input type="checkbox" @bind="caseDto.Survived" />
+</div>
+
+<div>
+    <label>Got Incurable Damage:</label>
+    <input type="checkbox" @bind="caseDto.GotIncurableDamage" />
+</div>
+
+<div class="mt-4">
+    <h4>Traumas</h4>
+    <TraumaEditor TraumaDtos="caseDto.TraumaDtos" />
+</div>
+
+<button class="btn btn-primary mt-4" @onclick="SaveCase">Save</button>
+
+@code {
+    [Parameter] public long Id { get; set; }
+    private CaseDto caseDto = new CaseDto();
+    private DateTime startedTreatmentDateTime = DateTime.Now;
+    private DateTime traumasRegisteredUnixTime = DateTime.Now;
+    private List<ClinicDto> clinics = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id != 0)
+        {
+            var caseResponse = await httpService.SendAsync<CaseDto>(HttpMethod.Get, $"Case/{Id}");
+            if (caseResponse.IsSuccess)
+            {
+                caseDto = caseResponse.Result;
+                startedTreatmentDateTime = DateTimeOffset.FromUnixTimeSeconds(caseDto.StartedTreatmentUnixTime).DateTime;
+                traumasRegisteredUnixTime = DateTimeOffset.FromUnixTimeSeconds(caseDto.TraumasRegisteredUnixTime).DateTime;
+            }
+        }
+
+        var clinicResponse = await httpService.SendAsync<List<ClinicDto>>(HttpMethod.Get, "Clinic/all");
+        if (clinicResponse.IsSuccess)
+        {
+            clinics = clinicResponse.Result;
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    private void SelectClinic(ClinicDto clinic)
+    {
+        caseDto.ClinicId = clinic.Id;
+        caseDto.ClinicTitle = clinic.Title;
+        StateHasChanged();
+    }
+
+    private async Task SaveCase()
+    {
+        caseDto.StartedTreatmentUnixTime = new DateTimeOffset(startedTreatmentDateTime).ToUnixTimeSeconds();
+        caseDto.TraumasRegisteredUnixTime = new DateTimeOffset(traumasRegisteredUnixTime).ToUnixTimeSeconds();
+
+        var response = await httpService.SendAsync<CaseDto>(HttpMethod.Post, "Case/edit", caseDto);
+        if (response.IsSuccess)
+        {
+            NavigationManager.NavigateTo("/cases");
+        }
+    }
+}

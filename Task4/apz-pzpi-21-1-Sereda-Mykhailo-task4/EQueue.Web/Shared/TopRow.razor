@@ -1,0 +1,13 @@
+﻿<div class="flex-grow-1 justify-content-center d-inline-flex p-2" style="background-color:azure">
+    <AuthorizeView>           
+        <Authorized>            
+            <EQueue.Web.Pages.Account.SignOut><span class="btn btn-primary">Sign out</span></EQueue.Web.Pages.Account.SignOut>
+        </Authorized>
+        <NotAuthorized>
+            <div>
+                <NavLink class="btn btn-primary" href="account/signin">Sign in</NavLink>
+                <NavLink class="btn btn-primary" href="account/signup">Sign up</NavLink>
+            </div>            
+        </NotAuthorized>
+    </AuthorizeView>       
+</div>

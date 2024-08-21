@@ -1,0 +1,125 @@
+﻿@using EQueue.Shared.Dto
+@using EQueue.Web.Services.Interfaces
+@inject IHttpService httpService
+
+<div class="my-5">
+    <h4>Add Trauma</h4>
+
+    <div class="mb-3">
+        <label for="traumaType" class="form-label">Trauma Type</label>
+        <ClickDrop>
+            <Head>
+                <button class="btn btn-secondary">@selectedTraumaTypeTitle</button>
+            </Head>
+            <Content>
+                <PickList Collection="traumaTypes"
+                          NamePropExpression="t => t.Title"
+                          PickAction="SelectTraumaType"
+                          ShowSearch="true" />
+            </Content>
+        </ClickDrop>
+    </div>
+
+    <div class="mb-3">
+        <label for="traumaPlace" class="form-label">Trauma Place</label>
+        <ClickDrop>
+            <Head>
+                <button class="btn btn-secondary">@selectedTraumaPlaceTitle</button>
+            </Head>
+            <Content>
+                <PickList Collection="traumaPlaces"
+                          NamePropExpression="p => p.Title"
+                          PickAction="SelectTraumaPlace"
+                          ShowSearch="true" />
+            </Content>
+        </ClickDrop>
+    </div>
+
+    <button class="btn btn-primary" @onclick="AddOrUpdateTrauma">Add/Update Trauma</button>
+</div>
+
+<h4>Trauma List</h4>
+
+<ul class="list-group">
+    @foreach (var trauma in TraumaDtos)
+    {
+        <li class="list-group-item">
+            @trauma.TraumaTypeTitle - @trauma.TraumaPlaceTitle
+        </li>
+    }
+</ul>
+
+@code {
+    [Parameter]
+    public List<TraumaDto> TraumaDtos { get; set; }
+
+    private List<LookupDto> traumaTypes = new();
+    private List<LookupDto> traumaPlaces = new();
+    private string selectedTraumaTypeTitle = "Select Trauma Type";
+    private string selectedTraumaPlaceTitle = "Select Trauma Place";
+    private long? selectedTraumaTypeId;
+    private long? selectedTraumaPlaceId;
+    private DateTime registeredTime;
+
+    protected override async Task OnInitializedAsync()
+    {
+        traumaTypes = await LoadLookupData("TraumaType/all");
+        traumaPlaces = await LoadLookupData("TraumaPlace/all");
+        registeredTime = DateTime.Now;
+    }
+
+    private async Task<List<LookupDto>> LoadLookupData(string endpoint)
+    {
+        var response = await httpService.SendAsync<List<LookupDto>>(HttpMethod.Get, endpoint);
+        return response.IsSuccess ? response.Result : new List<LookupDto>();
+    }
+
+    private void SelectTraumaType(LookupDto traumaType)
+    {
+        selectedTraumaTypeId = traumaType.Id;
+        selectedTraumaTypeTitle = traumaType.Title;
+    }
+
+    private void SelectTraumaPlace(LookupDto traumaPlace)
+    {
+        selectedTraumaPlaceId = traumaPlace.Id;
+        selectedTraumaPlaceTitle = traumaPlace.Title;
+    }
+
+    private void AddOrUpdateTrauma()
+    {
+        if (selectedTraumaTypeId.HasValue && selectedTraumaPlaceId.HasValue)
+        {
+            var trauma = new TraumaDto
+            {
+                TraumaTypeId = selectedTraumaTypeId,
+                TraumaTypeTitle = selectedTraumaTypeTitle,
+                TraumaPlaceId = selectedTraumaPlaceId,
+                TraumaPlaceTitle = selectedTraumaPlaceTitle,
+            };
+
+            TraumaDtos.Add(trauma);
+            ClearSelections();
+        }
+    }
+
+    private void ClearSelections()
+    {
+        selectedTraumaTypeId = null;
+        selectedTraumaTypeTitle = "Select Trauma Type";
+        selectedTraumaPlaceId = null;
+        selectedTraumaPlaceTitle = "Select Trauma Place";
+        registeredTime = DateTime.Now;
+    }
+
+    private DateTime UnixToDateTime(long unixTime)
+    {
+        return DateTimeOffset.FromUnixTimeSeconds(unixTime).DateTime;
+    }
+
+    private class LookupDto
+    {
+        public long Id { get; set; }
+        public string Title { get; set; }
+    }
+}

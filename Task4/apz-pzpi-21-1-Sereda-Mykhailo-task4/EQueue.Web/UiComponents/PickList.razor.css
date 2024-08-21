@@ -1,0 +1,7 @@
+﻿.list {
+    max-width: 200px;
+    box-shadow: 0px 4px 6px 0px rgba(0,0,0,0.2);
+    padding: 0.25rem;
+    margin-right: 0.25rem;
+    width: 200px;
+}

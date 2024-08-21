@@ -1,0 +1,42 @@
+﻿@if (ChildContent is not null)
+{
+    <div @attributes="InputAttributes" 
+            class="item @ActiveCss @ClassParameter"
+            @onmouseover="Activate"
+            @onmouseout="DeActivate">
+        @ChildContent
+    </div>
+}
+
+<link href="_content/WednumiComponents/WednumiComponentsStyles.css" rel="stylesheet" />
+
+@code{
+    protected string ActiveCss = "";
+
+    protected object? ClassParameter
+    {
+        get
+        {
+            var classParameter = InputAttributes.ContainsKey("class")
+                ? InputAttributes["class"]
+                : null;
+            return classParameter;
+        }
+    }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> InputAttributes { get; set; } = new Dictionary<string, object>();
+
+    protected virtual void Activate()
+    {
+        ActiveCss = "active-bg";
+    }
+
+    protected void DeActivate()
+    {
+        ActiveCss = "";
+    }
+}

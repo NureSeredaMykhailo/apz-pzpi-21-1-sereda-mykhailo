@@ -1,0 +1,16 @@
+﻿@using EQueue.Web.Security
+@inject AuthenticationService _authService
+
+<div @onclick=LogoutAsync>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    private async Task LogoutAsync()
+    {
+        await _authService.LogoutAsync();
+    }
+}

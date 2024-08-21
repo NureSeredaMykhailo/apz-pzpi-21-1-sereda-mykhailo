@@ -1,0 +1,91 @@
+﻿@page "/trauma-types"
+
+@using System.Linq
+@using EQueue.Shared.Dto
+@using EQueue.Web.Services.Interfaces
+
+@inject IHttpService httpService
+
+<h3>Trauma Types</h3>
+
+<div class="mb-3">
+    <input @bind="newTraumaTitle" placeholder="Add new Trauma Type" class="form-control" />
+    <button class="btn btn-primary mt-2" @onclick="AddNewTraumaType">Add</button>
+</div>
+
+<div class="mb-3">
+    <input @bind="searchTerm" placeholder="Search" class="form-control" />
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var trauma in filteredTraumaTypes)
+        {
+            <tr>
+                <td>
+                    @trauma.Title
+                </td>
+                <td>
+                    <button class="btn btn-danger" @onclick="() => DeleteTraumaType(trauma.Id)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<TraumaTypeDto> traumaTypes = new();
+    private string newTraumaTitle = string.Empty;
+    private string searchTerm = string.Empty;
+
+    private IEnumerable<TraumaTypeDto> filteredTraumaTypes =>
+        traumaTypes.Where(t => string.IsNullOrEmpty(searchTerm) || t.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var allTypes = await httpService.SendAsync<List<TraumaTypeDto>>(HttpMethod.Get, "TraumaType/all");
+        if (allTypes.IsSuccess)
+        {
+            traumaTypes = allTypes.Result;
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private async Task AddNewTraumaType()
+    {
+        if (!string.IsNullOrWhiteSpace(newTraumaTitle))
+        {
+            var type = new TraumaTypeDto() { Title = newTraumaTitle };
+            var added = await httpService.SendAsync<TraumaTypeDto>(HttpMethod.Post, "TraumaType/edit", type);
+            if (added.IsSuccess)
+            {
+                traumaTypes.Add(added.Result);
+                StateHasChanged();
+            }
+            newTraumaTitle = string.Empty;
+        }
+    }
+
+    private async Task DeleteTraumaType(long? id)
+    {
+        if (id != null)
+        {
+            var response = await httpService.SendAsync<bool>(HttpMethod.Delete, $"TraumaType/delete/{id}");
+            if (response.IsSuccess && response.Result)
+            {
+                var traumaType = traumaTypes.FirstOrDefault(t => t.Id == id);
+                if (traumaType != null)
+                {
+                    traumaTypes.Remove(traumaType);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+}

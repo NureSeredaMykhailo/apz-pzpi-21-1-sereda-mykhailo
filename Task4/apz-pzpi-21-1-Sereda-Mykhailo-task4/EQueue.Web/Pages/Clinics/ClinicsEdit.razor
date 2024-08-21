@@ -1,0 +1,91 @@
+﻿@page "/clinics"
+
+@using System.Linq
+@using EQueue.Shared.Dto
+@using EQueue.Web.Services.Interfaces
+
+@inject IHttpService httpService
+
+<h3>Clinics</h3>
+
+<div class="mb-3">
+    <input @bind="newClinicTitle" placeholder="Add new Clinic" class="form-control" />
+    <button class="btn btn-primary mt-2" @onclick="AddNewClinic">Add</button>
+</div>
+
+<div class="mb-3">
+    <input @bind="searchTerm" placeholder="Search" class="form-control" />
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var clinic in filteredClinics)
+        {
+            <tr>
+                <td>
+                    @clinic.Title
+                </td>
+                <td>
+                    <button class="btn btn-danger" @onclick="() => DeleteClinic(clinic.Id)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<ClinicDto> clinics = new();
+    private string newClinicTitle = string.Empty;
+    private string searchTerm = string.Empty;
+
+    private IEnumerable<ClinicDto> filteredClinics =>
+        clinics.Where(t => string.IsNullOrEmpty(searchTerm) || t.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var allClinics = await httpService.SendAsync<List<ClinicDto>>(HttpMethod.Get, "Clinic/all");
+        if (allClinics.IsSuccess)
+        {
+            clinics = allClinics.Result;
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private async Task AddNewClinic()
+    {
+        if (!string.IsNullOrWhiteSpace(newClinicTitle))
+        {
+            var clinic = new ClinicDto() { Title = newClinicTitle };
+            var added = await httpService.SendAsync<ClinicDto>(HttpMethod.Post, "Clinic/edit", clinic);
+            if (added.IsSuccess)
+            {
+                clinics.Add(added.Result);
+                StateHasChanged();
+            }
+            newClinicTitle = string.Empty;
+        }
+    }
+
+    private async Task DeleteClinic(long? id)
+    {
+        if (id != null)
+        {
+            var response = await httpService.SendAsync<bool>(HttpMethod.Delete, $"Clinic/delete/{id}");
+            if (response.IsSuccess && response.Result)
+            {
+                var clinic = clinics.FirstOrDefault(t => t.Id == id);
+                if (clinic != null)
+                {
+                    clinics.Remove(clinic);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,6 @@
+@EQueue.Server_HostAddress = http://localhost:5023
+
+GET {{EQueue.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

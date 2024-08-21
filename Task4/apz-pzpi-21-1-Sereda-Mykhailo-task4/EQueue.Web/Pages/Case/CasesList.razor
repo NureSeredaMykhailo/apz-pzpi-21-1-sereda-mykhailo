@@ -1,0 +1,75 @@
+﻿@page "/cases"
+
+@using EQueue.Shared.Dto
+@using EQueue.Web.Services.Interfaces
+@inject IHttpService httpService
+@inject NavigationManager NavigationManager
+
+<h3>Cases</h3>
+
+<button class="btn btn-primary mb-4" @onclick="AddNewCase">Add New Case</button>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Clinic</th>
+            <th>Started Treatment</th>
+            <th>Survived</th>
+            <th>Incurable Damage</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var caseDto in cases)
+        {
+            <tr>
+                <td>@caseDto.Name</td>
+                <td>@caseDto.Age</td>
+                <td>@caseDto.ClinicId</td>
+                <td>@DateTimeOffset.FromUnixTimeSeconds(caseDto.StartedTreatmentUnixTime).DateTime.ToString("g")</td>
+                <td>@caseDto.Survived</td>
+                <td>@caseDto.GotIncurableDamage</td>
+                <td>
+                    <button class="btn btn-secondary" @onclick="() => EditCase(caseDto.Id)">Edit</button>
+                    <button class="btn btn-danger" @onclick="() => DeleteCase(caseDto.Id)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<CaseDto> cases = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await httpService.SendAsync<List<CaseDto>>(HttpMethod.Get, "Case/all");
+        if (response.IsSuccess)
+        {
+            cases = response.Result;
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private void AddNewCase()
+    {
+        NavigationManager.NavigateTo("/cases/edit/0");
+    }
+
+    private void EditCase(long id)
+    {
+        NavigationManager.NavigateTo($"/cases/edit/{id}");
+    }
+
+    private async Task DeleteCase(long id)
+    {
+        var response = await httpService.SendAsync<bool>(HttpMethod.Delete, $"Case/delete/{id}");
+        if (response.IsSuccess && response.Result)
+        {
+            cases = cases.Where(c => c.Id != id).ToList();
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,91 @@
+﻿@page "/trauma-places"
+
+@using System.Linq
+@using EQueue.Shared.Dto
+@using EQueue.Web.Services.Interfaces
+
+@inject IHttpService httpService
+
+<h3>Trauma Places</h3>
+
+<div class="mb-3">
+    <input @bind="newTraumaPlaceTitle" placeholder="Add new Trauma Place" class="form-control" />
+    <button class="btn btn-primary mt-2" @onclick="AddNewTraumaPlace">Add</button>
+</div>
+
+<div class="mb-3">
+    <input @bind="searchTerm" placeholder="Search" class="form-control" />
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var trauma in filteredTraumaPlaces)
+        {
+            <tr>
+                <td>
+                    @trauma.Title
+                </td>
+                <td>
+                    <button class="btn btn-danger" @onclick="() => DeleteTraumaPlace(trauma.Id)">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<TraumaPlaceDto> traumaPlaces = new();
+    private string newTraumaPlaceTitle = string.Empty;
+    private string searchTerm = string.Empty;
+
+    private IEnumerable<TraumaPlaceDto> filteredTraumaPlaces =>
+        traumaPlaces.Where(t => string.IsNullOrEmpty(searchTerm) || t.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var allPlaces = await httpService.SendAsync<List<TraumaPlaceDto>>(HttpMethod.Get, "TraumaPlace/all");
+        if (allPlaces.IsSuccess)
+        {
+            traumaPlaces = allPlaces.Result;
+        }
+        await base.OnInitializedAsync();
+    }
+
+    private async Task AddNewTraumaPlace()
+    {
+        if (!string.IsNullOrWhiteSpace(newTraumaPlaceTitle))
+        {
+            var place = new TraumaPlaceDto() { Title = newTraumaPlaceTitle };
+            var added = await httpService.SendAsync<TraumaPlaceDto>(HttpMethod.Post, "TraumaPlace/edit", place);
+            if (added.IsSuccess)
+            {
+                traumaPlaces.Add(added.Result);
+                StateHasChanged();
+            }
+            newTraumaPlaceTitle = string.Empty;
+        }
+    }
+
+    private async Task DeleteTraumaPlace(long? id)
+    {
+        if (id != null)
+        {
+            var response = await httpService.SendAsync<bool>(HttpMethod.Delete, $"TraumaPlace/delete/{id}");
+            if (response.IsSuccess && response.Result)
+            {
+                var traumaPlace = traumaPlaces.FirstOrDefault(t => t.Id == id);
+                if (traumaPlace != null)
+                {
+                    traumaPlaces.Remove(traumaPlace);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+}
